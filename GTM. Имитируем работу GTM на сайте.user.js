@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         GTM. Имитируем работу GTM на сайте
 // @namespace    http://tampermonkey.net
-// @version      6.2
+// @version      6.2.1
 // @description  Продвинутый инжектор GTM с управлением через tagmanager.google.com
-// @author       ИП Ульянов
+// @author       ИП Ульянов (Станислав)
 // @match        https://tagmanager.google.com/*
 // @match        *://*/*
 // @grant        GM_setValue
