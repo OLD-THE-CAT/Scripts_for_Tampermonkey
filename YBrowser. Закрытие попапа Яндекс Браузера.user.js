@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YBrowser. Закрытие попапа Яндекс Браузера
 // @namespace    http://tampermonkey.net/
-// @version      2.7.1
+// @version      2.7.2
 // @description  Автоматически закрывает всплывающие окна с предложением установить Яндекс Браузер и активирует поиск
 // @author       ИП Ульянов (Станислав)
 // @match        https://yandex.kz/*
