@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         YDirect. Подсветка поисковой рекламы в Yandex
 // @namespace    http://tampermonkey.net/
-// @version      3.7.1
+// @version      3.7.2
 // @description  Подсвечивает рекламные блоки Яндекса с выделением собственного домена
-// @author       ИП Ульянов (Станислав)
+// @author       ИП Ульянов 1
 // @match        https://yandex.ru/search*
 // @match        https://yandex.com/search*
 // @match        https://yandex.by/search*
