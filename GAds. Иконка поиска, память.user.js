@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GAds. Иконка поиска + память
 // @namespace    http://tampermonkey.net/
-// @version      3.1.2
+// @version      3.1.3
 // @description  Исправление иконки поиска в Google Ad Preview без мерцания с автообновлением
 // @author       ИП Ульянов
 // @match        https://ads.google.com/anon/AdPreview*
