@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         GAds. Подсветка поисковой рекламы в Google
 // @namespace    http://tampermonkey.net/
-// @version      4.2
+// @version      4.3
 // @description  Подсвечивает блоки поисковой рекламы в Google с возможностью выделения нескольких доменов
-// @author       ИП Ульянов
+// @author       ИП Ульянов (Станислав)
 // @include      /^https:\/\/.*google\.[a-z]+\/.*search.*/
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_deleteValue
+// @updateURL    https://github.com/OLD-THE-CAT/Scripts_for_Tampermonkey/raw/refs/heads/main/GTM.%20%D0%98%D0%BC%D0%B8%D1%82%D0%B8%D1%80%D1%83%D0%B5%D0%BC%20%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%83%20GTM%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%D0%B5.user.js
+// @downloadURL  https://github.com/OLD-THE-CAT/Scripts_for_Tampermonkey/raw/refs/heads/main/GTM.%20%D0%98%D0%BC%D0%B8%D1%82%D0%B8%D1%80%D1%83%D0%B5%D0%BC%20%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%83%20GTM%20%D0%BD%D0%B0%20%D1%81%D0%B0%D0%B9%D1%82%D0%B5.user.js
 // @icon         https://img.icons8.com/color/48/google-ads.png
 // ==/UserScript==
 
