@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GAds. Иконка поиска + память
 // @namespace    http://tampermonkey.net/
-// @version      3.1.4
-// @description  Исправление иконки поиска в Google Ad Preview без мерцания с автообновлением
+// @version      3.1.5
+// @description  Исправление иконки поиска в Google Ad Preview
 // @author       ИП Ульянов (Станислав)
 // @match        https://ads.google.com/anon/AdPreview*
 // @updateURL    https://github.com/OLD-THE-CAT/Scripts_for_Tampermonkey/raw/refs/heads/main/GAds.%20%D0%98%D0%BA%D0%BE%D0%BD%D0%BA%D0%B0%20%D0%BF%D0%BE%D0%B8%D1%81%D0%BA%D0%B0,%20%D0%BF%D0%B0%D0%BC%D1%8F%D1%82%D1%8C.user.js
@@ -320,4 +320,41 @@
 
     startScript();
 
+})();
+
+// Убераем уведомление о входе в аккаунт
+(function () {
+  const A = 'anonymous-sign-in-panel', B = 'shadow';
+
+  const removePanels = () => {
+    const list = document.getElementsByClassName(A); // быстрее, чем querySelectorAll
+    let removed = 0;
+    for (let i = list.length - 1; i >= 0; i--) {      // идём с конца: коллекция «живая»
+      const el = list[i];
+      if (el?.classList?.contains(B)) { el.remove(); removed++; }
+    }
+    return removed;
+  };
+
+  let base = 3000, max = 30000, miss = 0, t;
+
+  const tick = () => {
+    if (document.visibilityState !== 'visible') {
+      t = setTimeout(tick, max);                      // редко опрашиваем в фоне
+      return;
+    }
+    const run = () => {
+      const removed = removePanels();
+      miss = removed ? 0 : Math.min(miss + 1, 10);
+      const next = removed ? base : Math.min(base * (1 + miss), max); // backoff до 30с
+      t = setTimeout(tick, next);
+    };
+    if ('requestIdleCallback' in window) requestIdleCallback(run, { timeout: 200 });
+    else run();
+  };
+
+  removePanels(); // разово
+  tick();
+
+  window.addEventListener('beforeunload', () => clearTimeout(t));
 })();
