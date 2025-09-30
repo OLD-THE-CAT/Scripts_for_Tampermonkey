@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GTM. Имитируем работу GTM на сайте
 // @namespace    http://tampermonkey.net
-// @version      6.2.1
+// @version      6.2.2
 // @description  Продвинутый инжектор GTM с управлением через tagmanager.google.com
 // @author       ИП Ульянов (Станислав)
 // @match        https://tagmanager.google.com/*
@@ -932,7 +932,7 @@
             const domain = domainInput.value.trim();
             const gtmId = gtmInput.value.trim();
 
-            const isDomainValid = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/.test(domain);
+            const isDomainValid = /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(domain);
             const isGtmValid = /^GTM-[A-Z0-9]{6,}$/i.test(gtmId);
 
             saveBtn.disabled = !isDomainValid || !isGtmValid;
