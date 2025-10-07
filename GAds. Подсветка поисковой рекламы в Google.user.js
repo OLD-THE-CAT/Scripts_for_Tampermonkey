@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GAds. Подсветка поисковой рекламы в Google
 // @namespace    http://tampermonkey.net/
-// @version      4.3
+// @version      4.4
 // @description  Подсвечивает блоки поисковой рекламы в Google с возможностью выделения нескольких доменов
 // @author       ИП Ульянов (Станислав)
 // @include      /^https:\/\/.*google\.[a-z]+\/.*search.*/
@@ -355,10 +355,42 @@
     }
 
     // Функции для работы с хранилищем Tampermonkey
+    // Функция для извлечения домена из URL
+    function extractDomain(url) {
+        try {
+            // Удаляем пробелы
+            url = url.trim();
+
+            // Если нет протокола, добавляем временный для парсинга
+            if (!url.match(/^https?:\/\//i)) {
+                url = 'http://' + url;
+            }
+
+            // Создаём объект URL для парсинга
+            const urlObj = new URL(url);
+            let hostname = urlObj.hostname;
+
+            // Удаляем www. если есть
+            hostname = hostname.replace(/^www\./i, '');
+
+            return hostname;
+        } catch (e) {
+            // Если не удалось распарсить как URL, возвращаем как есть
+            return url.trim().replace(/^www\./i, '').toLowerCase();
+        }
+    }
+
     function saveDomains(domains) {
         try {
+            // Обрабатываем каждый введённый домен/URL
+            const processedDomains = domains
+                .split(',')
+                .map(d => extractDomain(d))
+                .filter(d => d.length > 0)
+                .join(', ');
+
             setTimeout(() => {
-                GM_setValue(STORAGE_KEY, domains);
+                GM_setValue(STORAGE_KEY, processedDomains);
             }, 0);
             return true;
         } catch (error) {
