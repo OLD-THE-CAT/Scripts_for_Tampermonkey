@@ -6,6 +6,8 @@
 // @author       ИП Ульянов
 // @match        https://ads.google.com/*
 // @grant        none
+// @updateURL    https://github.com/OLD-THE-CAT/Scripts_for_Tampermonkey/raw/refs/heads/main/GAds.%20%D0%A7%D0%B8%D1%81%D1%82%D0%BA%D0%B0%20%D0%BF%D0%BB%D0%BE%D1%89%D0%B0%D0%B4%D0%BE%D0%BA%20%D0%9A%D0%9C%D0%A1.user.js
+// @downloadURL  https://github.com/OLD-THE-CAT/Scripts_for_Tampermonkey/raw/refs/heads/main/GAds.%20%D0%A7%D0%B8%D1%81%D1%82%D0%BA%D0%B0%20%D0%BF%D0%BB%D0%BE%D1%89%D0%B0%D0%B4%D0%BE%D0%BA%20%D0%9A%D0%9C%D0%A1.user.js
 // @icon         https://img.icons8.com/color/48/google-ads.png
 // ==/UserScript==
 
