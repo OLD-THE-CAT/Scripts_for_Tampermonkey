@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YDirect. Подсветка поисковой рекламы в Yandex
 // @namespace    http://tampermonkey.net/
-// @version      3.7.5
+// @version      3.7.6
 // @description  Подсвечивает рекламные блоки Яндекса с выделением собственного домена
 // @author       ИП Ульянов (Станислав)
 // @match        https://yandex.ru/search*
@@ -65,7 +65,19 @@
     // Сохраняем домены
     function saveDomains(domains) {
         const cleanDomains = domains.split(',')
-            .map(d => d.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, ''))
+            .map(d => {
+                // Убираем пробелы
+                d = d.trim().toLowerCase();
+                // Убираем протокол (http://, https://)
+                d = d.replace(/^https?:\/\//, '');
+                // Убираем www.
+                d = d.replace(/^www\./, '');
+                // Убираем путь после домена (все после первого слэша)
+                d = d.split('/')[0];
+                // Убираем query параметры (все после вопросительного знака)
+                d = d.split('?')[0];
+                return d;
+            })
             .filter(d => d.length > 0);
         MY_DOMAINS = cleanDomains;
         GM_setValue('myDomains', cleanDomains.join(','));
