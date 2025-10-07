@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GAds. Чистка площадок КМС
 // @namespace    http://tampermonkey.net/
-// @version      2.1
+// @version      2.2
 // @description  Всё работает, как раньше, плюс перемещение панели/иконки
 // @author       ИП Ульянов
 // @match        https://ads.google.com/*
