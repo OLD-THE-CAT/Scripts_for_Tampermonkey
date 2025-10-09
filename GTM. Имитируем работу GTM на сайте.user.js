@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GTM. Имитируем работу GTM на сайте
 // @namespace    http://tampermonkey.net
-// @version      6.2.7
+// @version      6.2.8
 // @description  Продвинутый инжектор GTM с управлением через tagmanager.google.com
 // @author       ИП Ульянов (Станислав)
 // @match        https://tagmanager.google.com/*
@@ -294,12 +294,12 @@
         }
 
         .gtm-injector-btn-secondary {
-            background: #f8f9fa;
-            color: #3c4043;
+            background: #fce8e6;
+            color: #d93025;
         }
 
         .gtm-injector-btn-secondary:hover {
-            background: #f1f3f4;
+            background: #f6aea9;
         }
 
         .gtm-injector-btn-primary {
