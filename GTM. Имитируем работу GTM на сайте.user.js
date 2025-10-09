@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GTM. Имитируем работу GTM на сайте
 // @namespace    http://tampermonkey.net
-// @version      6.2.2
+// @version      6.2.7
 // @description  Продвинутый инжектор GTM с управлением через tagmanager.google.com
 // @author       ИП Ульянов (Станислав)
 // @match        https://tagmanager.google.com/*
@@ -402,7 +402,7 @@
             margin-bottom: 24px;
             border: 1px solid #dadce0;
             border-radius: 8px;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .gtm-config-item {
@@ -483,16 +483,17 @@
         .gtm-config-icon-btn:hover::after {
             content: attr(data-tooltip);
             position: absolute;
-            bottom: -30px;
+            bottom: 100%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translateX(-50%) translateY(-8px);
             background: #202124;
             color: white;
             padding: 4px 8px;
             border-radius: 4px;
             font-size: 11px;
             white-space: nowrap;
-            z-index: 1000;
+            z-index: 2147483647 !important;
+            pointer-events: none;
         }
 
         .gtm-config-btn-edit {
