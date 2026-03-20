@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GAds. Показываем остаток бюджета
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Показывает остаток средств в блоке "Бюджеты аккаунта" на странице биллинга Google Ads
 // @author       ИП Ульянов (Станислав)
 // @match        https://ads.google.com/*
