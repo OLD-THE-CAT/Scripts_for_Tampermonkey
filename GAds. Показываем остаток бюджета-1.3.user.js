@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         GAds. Показываем остаток бюджета
 // @namespace    http://tampermonkey.net/
-// @version      1.9
-// @description  Показывает остаток средств в блоке "Бюджеты аккаунта" на странице биллинга Google Ads
+// @version      1.10
+// @description  Показывает остаток средств в блоке "Бюджеты аккаунта" на странице биллинга Google Ads. Копирование по клику на значение.
 // @author       ИП Ульянов (Станислав)
 // @match        https://ads.google.com/*
 // @updateURL    https://github.com/OLD-THE-CAT/Scripts_for_Tampermonkey/raw/refs/heads/main/GAds.%20%D0%9F%D0%BE%D0%BA%D0%B0%D0%B7%D1%8B%D0%B2%D0%B0%D0%B5%D0%BC%20%D0%BE%D1%81%D1%82%D0%B0%D1%82%D0%BE%D0%BA%20%D0%B1%D1%8E%D0%B4%D0%B6%D0%B5%D1%82%D0%B0.user.js
@@ -74,21 +74,19 @@ GM_addStyle(`
   }
   #${CONFIG.INSERTED_ID} .tm-tooltip {
     position: relative !important;
-    cursor: help !important;
+    cursor: pointer !important;
   }
   #${CONFIG.INSERTED_ID} .tm-tooltip::after {
-    content: attr(data-tooltip) !important;
+    content: '' !important;
     position: absolute !important;
     bottom: 100% !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    background: #3c4043 !important;
-    color: #fff !important;
-    padding: 8px 12px !important;
-    border-radius: 4px !important;
-    font-size: 0.75rem !important;
-    font-family: Roboto, Arial, sans-serif !important;
-    white-space: nowrap !important;
+    background: #3c4043 url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z' fill='%23fff'/%3E%3C/svg%3E") no-repeat center !important;
+    background-size: 24px 24px !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 8px !important;
     opacity: 0 !important;
     visibility: hidden !important;
     transition: opacity 0.2s, visibility 0.2s !important;
@@ -98,38 +96,9 @@ GM_addStyle(`
     opacity: 1 !important;
     visibility: visible !important;
   }
-  #${CONFIG.INSERTED_ID} .tm-copy-btn {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 28px !important;
-    height: 28px !important;
-    padding: 0 !important;
-    border: none !important;
-    border-radius: 50% !important;
-    background: transparent !important;
-    cursor: pointer !important;
-    opacity: 0.5 !important;
-    transition: opacity 0.2s, background-color 0.2s, transform 0.1s !important;
-  }
-  #${CONFIG.INSERTED_ID} .tm-copy-btn:hover {
-    opacity: 0.9 !important;
-    background-color: rgba(0, 0, 0, 0.08) !important;
-  }
-  #${CONFIG.INSERTED_ID} .tm-copy-btn:active {
-    transform: scale(0.95) !important;
-    background-color: rgba(0, 0, 0, 0.12) !important;
-  }
-  #${CONFIG.INSERTED_ID} .tm-copy-btn svg {
-    width: 18px !important;
-    height: 18px !important;
-    fill: ${CONFIG.COLORS.LABEL} !important;
-  }
-  #${CONFIG.INSERTED_ID} .tm-copy-btn.copied {
-    opacity: 1 !important;
-  }
-  #${CONFIG.INSERTED_ID} .tm-copy-btn.copied svg {
-    fill: ${CONFIG.COLORS.POSITIVE} !important;
+  #${CONFIG.INSERTED_ID} .tm-tooltip.copied::after {
+    background: #1e8e3e url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z' fill='%23fff'/%3E%3C/svg%3E") no-repeat center !important;
+    background-size: 24px 24px !important;
   }
   #${CONFIG.INSERTED_ID} .tm-value-container {
     display: inline-flex !important;
@@ -220,34 +189,14 @@ function detectCurrency() {
 }
 
 /**
- * SVG иконка копирования
- */
-const COPY_ICON_SVG = `
-  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-  </svg>
-`;
-
-/**
- * SVG иконка подтверждения копирования
- */
-const CHECK_ICON_SVG = `
-  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-  </svg>
-`;
-
-/**
  * Копирование значения в буфер обмена
  */
-async function copyToClipboard(text, button) {
+async function copyToClipboard(text, element) {
   try {
     await navigator.clipboard.writeText(text);
-    button.classList.add('copied');
-    button.innerHTML = CHECK_ICON_SVG;
+    element.classList.add('copied');
     setTimeout(() => {
-      button.classList.remove('copied');
-      button.innerHTML = COPY_ICON_SVG;
+      element.classList.remove('copied');
     }, 2000);
   } catch (err) {
     console.error('[GAds Budget] Ошибка копирования:', err);
@@ -343,31 +292,21 @@ function createWrapper() {
   label.className = 'tm-label';
   label.textContent = CONFIG.LABELS.REMAINING;
 
-  const valueContainer = document.createElement('span');
-  valueContainer.className = 'tm-value-container';
-
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'tm-copy-btn';
-  copyBtn.innerHTML = COPY_ICON_SVG;
-  copyBtn.type = 'button';
-  copyBtn.title = 'Копировать значение';
-
   const value = document.createElement('span');
   value.className = 'tm-value tm-tooltip';
   value.dataset.role = 'remaining-value';
-  value.dataset.tooltip = 'Лимит − Затраты + Бонус';
+  value.title = 'Нажмите для копирования';
 
-  copyBtn.addEventListener('click', function () {
+  // Обработчик клика на tooltip (копирование)
+  value.addEventListener('click', function () {
     const currentValue = value.textContent;
     if (currentValue && currentValue !== CONFIG.LABELS.LOADING && currentValue !== CONFIG.LABELS.ERROR) {
-      copyToClipboard(currentValue.replace(/\u00a0/g, ' '), copyBtn);
+      copyToClipboard(currentValue.replace(/\u00a0/g, ' '), value);
     }
   });
 
-  valueContainer.appendChild(copyBtn);
-  valueContainer.appendChild(value);
   wrapper.appendChild(label);
-  wrapper.appendChild(valueContainer);
+  wrapper.appendChild(value);
 
   return wrapper;
 }
@@ -393,7 +332,6 @@ function renderRemaining(formatted, isPositive, currency) {
   if (value) {
     value.textContent = formatted;
     value.className = `tm-value tm-tooltip ${isPositive ? 'positive' : 'negative'}`;
-    value.dataset.tooltip = `Лимит − Затраты + Бонус (${currency})`;
   }
 }
 
@@ -431,6 +369,6 @@ window.addEventListener('popstate', debouncedInject);
 injectRemaining();
 
 // Логирование версии
-console.log('[GAds Budget] Скрипт загружен, версия 1.9');
+console.log('[GAds Budget] Скрипт загружен, версия 1.10');
 
 })();
