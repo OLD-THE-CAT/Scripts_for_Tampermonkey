@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YDirect. Подсветка поисковой рекламы в Yandex
 // @namespace    http://tampermonkey.net/
-// @version      3.7.6
+// @version      3.7.9
 // @description  Подсвечивает рекламные блоки Яндекса с выделением собственного домена
 // @author       ИП Ульянов (Станислав)
 // @match        https://yandex.ru/search*
@@ -443,12 +443,14 @@
             }
         }
 
-        // Проверяем data-vnl атрибуты (новый формат)
-        const dataVnlElements = element.querySelectorAll('[data-vnl]');
-        for (let element of dataVnlElements) {
-            try {
-                const dataVnl = element.getAttribute('data-vnl');
-                if (dataVnl) {
+        // Проверяем все элементы на наличие атрибутов с URL
+        const allElements = element.querySelectorAll('*');
+        
+        for (let el of allElements) {
+            // Проверяем data-vnl
+            const dataVnl = el.getAttribute('data-vnl');
+            if (dataVnl) {
+                try {
                     const vnlData = JSON.parse(dataVnl);
                     const url = vnlData.noRedirectUrl || '';
                     if (url) {
@@ -457,17 +459,57 @@
                             return true;
                         }
                     }
-                }
-            } catch (e) {
-                // Если JSON не парсится, ищем домен в строке
-                const dataVnl = element.getAttribute('data-vnl');
-                if (dataVnl) {
+                } catch (e) {
                     for (let domain of MY_DOMAINS) {
                         if (dataVnl.includes(domain)) {
                             return true;
                         }
                     }
                 }
+            }
+
+            // Проверяем data-xebyy (новый атрибут Яндекса)
+            const dataXebyy = el.getAttribute('data-xebyy');
+            if (dataXebyy) {
+                try {
+                    const xebyyData = JSON.parse(dataXebyy);
+                    // Ищем URL в различных полях
+                    const url = xebyyData.noRedirectUrl || xebyyData.url || xebyyData.snippetUrl || '';
+                    if (url) {
+                        const domain = extractDomainFromUrl(url);
+                        if (MY_DOMAINS.includes(domain)) {
+                            return true;
+                        }
+                    }
+                    // Также проверяем вложенные объекты
+                    if (xebyyData.feedback && xebyyData.feedback.xBPoBk8wfV5vN) {
+                        const feedbackUrl = xebyyData.feedback.xBPoBk8wfV5vN;
+                        const domain = extractDomainFromUrl(feedbackUrl);
+                        if (MY_DOMAINS.includes(domain)) {
+                            return true;
+                        }
+                    }
+                } catch (e) {
+                    for (let domain of MY_DOMAINS) {
+                        if (dataXebyy.includes(domain)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            // Проверяем data-counter и другие атрибуты, которые могут содержать URL
+            const dataCounter = el.getAttribute('data-counter');
+            if (dataCounter) {
+                try {
+                    const counterData = JSON.parse(dataCounter);
+                    if (counterData.url) {
+                        const domain = extractDomainFromUrl(counterData.url);
+                        if (MY_DOMAINS.includes(domain)) {
+                            return true;
+                        }
+                    }
+                } catch (e) {}
             }
         }
 
@@ -569,6 +611,25 @@
             dataClick.includes('utm_campaign=') ||
             dataClick.includes('utm_medium=')
         );
+    }
+
+    // НОВАЯ функция проверки наличия текста "Реклама" в элементе
+    function hasAdLabel(element) {
+        // Ищем элемент с текстом "Реклама" (может быть в любом вложенном элементе)
+        const allElements = element.querySelectorAll('*');
+        for (let el of allElements) {
+            if (el.textContent.trim() === 'Реклама') {
+                // Проверяем, что это не слишком большой элемент (чтобы не захватить весь текст страницы)
+                if (el.textContent.length < 20) {
+                    return true;
+                }
+            }
+            // Также проверяем частичное совпадение для случаев, когда "Реклама" является частью текста
+            if (el.textContent.includes('Реклама') && el.children.length === 0 && el.textContent.length < 50) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function isSearchResultBlock(element) {
@@ -692,6 +753,27 @@
                 }
             } catch (e) {
                 console.warn('Error processing element:', e);
+            }
+        });
+
+        // НОВЫЙ блок: Ищем рекламные блоки по текстовой метке "Реклама"
+        document.querySelectorAll('li[data-xbveq], li[data-first-snippet], .Organic, .serp-item').forEach(element => {
+            if (processedElements.has(element) || foundBlocks.has(element) || markedBlocks.has(element)) return;
+
+            if (hasAdLabel(element)) {
+                // Проверяем, что это действительно рекламный блок, а не случайное совпадение
+                const hasLink = element.querySelector('a[href]');
+                const hasAdMarker = element.querySelector('[data-vnl], [data-click]');
+                const hasAdUrl = hasAdMarker && (
+                    (hasAdMarker.getAttribute('data-vnl') || '').includes('yclid=') ||
+                    (hasAdMarker.getAttribute('data-click') || '').includes('yclid=')
+                );
+
+                // Подсвечиваем блок, если есть метка "Реклама" и есть ссылка
+                if (hasLink) {
+                    foundBlocks.add(element);
+                    processedElements.add(element);
+                }
             }
         });
 
