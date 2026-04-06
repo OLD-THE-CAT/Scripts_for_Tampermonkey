@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GAds. Показываем остаток бюджета
 // @namespace    http://tampermonkey.net/
-// @version      1.10
+// @version      1.11
 // @description  Показывает остаток средств в блоке "Бюджеты аккаунта" на странице биллинга Google Ads. Копирование по клику на значение.
 // @author       ИП Ульянов (Станислав)
 // @match        https://ads.google.com/*
@@ -47,6 +47,7 @@ GM_addStyle(`
     display: inline-flex !important;
     flex-direction: column !important;
     margin-left: 16px !important;
+    align-items: flex-end !important;
   }
   #${CONFIG.INSERTED_ID} .tm-label {
     font-family: Roboto, Arial, sans-serif !important;
@@ -369,6 +370,6 @@ window.addEventListener('popstate', debouncedInject);
 injectRemaining();
 
 // Логирование версии
-console.log('[GAds Budget] Скрипт загружен, версия 1.10');
+console.log('[GAds Budget] Скрипт загружен, версия 1.11');
 
 })();
