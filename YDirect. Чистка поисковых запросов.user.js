@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YDirect. Чистка поисковых запросов
 // @namespace    https://github.com/
-// @version      1.3.0
+// @version      1.4.0
 // @description  Добавляет панель для сбора минус-слов из поисковых запросов Яндекс.Директ
 // @author       ИП Ульянов (Станислав)
 // @match        https://direct.yandex.ru/*
@@ -31,16 +31,33 @@
   let collapsedButtonActivationLocked = false;
   let panelAnimationSeq = 0;
   let activeActionTooltip = null;
+  let activeReportInterface = null;
 
-  const DIRECT_REPORT_PATH_RE = /\/dna\/reports\//;
-  const QUERY_HEADER_SELECTOR = [
-    '[data-testid="Header.SearchQuery_SearchQuery"]',
-    '[data-testid="Grid.HeaderCell-SearchQuery_SearchQuery"]'
-  ].join(', ');
-  const QUERY_TEXT_SELECTOR = [
-    '[data-testid="Cell.SearchQuery_SearchQuery"] span[data-testid="Text"]',
-    '[data-testid="Cell.SearchQuery_SearchQuery"] [data-testid="Text.Content"]'
-  ].join(', ');
+  const REPORT_INTERFACES = [
+    {
+      id: 'new',
+      pathRe: /\/dna\/reports\//,
+      headerSelector: [
+        '[data-testid="Header.SearchQuery_SearchQuery"]',
+        '[data-testid="Grid.HeaderCell-SearchQuery_SearchQuery"]'
+      ].join(', '),
+      queryTextSelector: [
+        '[data-testid="Cell.SearchQuery_SearchQuery"] span[data-testid="Text"]',
+        '[data-testid="Cell.SearchQuery_SearchQuery"] [data-testid="Text.Content"]'
+      ].join(', ')
+    },
+    // LEGACY OLD REPORTS: remove this profile when Yandex retires the old reports UI.
+    {
+      id: 'legacy',
+      pathRe: /\/registered\/main\.pl(?:$|[/?#])/,
+      headerSelector: '.b-stat-table__head-col',
+      headerText: 'Поисковый запрос',
+      pageText: 'Поисковый запрос',
+      queryTextSelector: '.b-stat-table__row-col_content-type_search-query',
+      queryTextInnerSelector: '.b-mol-stat-data__search-query-wrap',
+      checkboxSelector: '.checkbox__box, .checkbox__control, .checkbox__tick'
+    }
+  ];
   const USER_BAR_SELECTOR = '.dc-UserBar__topSection';
   const USER_BAR_LAST_BUTTON_SELECTOR = 'button[data-testid="RecommendationStories.IconTrigger"]';
 
@@ -444,21 +461,49 @@
     panelCollapsed = false;
   }
 
-  function checkPage() {
-    const isDirectReportsPage = window.location.hostname === 'direct.yandex.ru'
-      && DIRECT_REPORT_PATH_RE.test(window.location.pathname);
-    const hasSearchQueryColumn = Boolean(
-      document.querySelector(QUERY_HEADER_SELECTOR) ||
-      document.querySelector(QUERY_TEXT_SELECTOR)
-    );
+  function getActiveReportInterface() {
+    return REPORT_INTERFACES.find(reportInterfaceMatches) || null;
+  }
 
-    if (isDirectReportsPage && hasSearchQueryColumn) {
+  function reportInterfaceMatches(reportInterface) {
+    if (window.location.hostname !== 'direct.yandex.ru') return false;
+    if (!reportInterface.pathRe.test(window.location.pathname)) return false;
+    if (reportInterface.rootSelector && !document.querySelector(reportInterface.rootSelector)) return false;
+    if (reportInterface.pageText && !document.body.textContent.includes(reportInterface.pageText)) return false;
+    return hasReportSearchQueryColumn(reportInterface);
+  }
+
+  function hasReportSearchQueryColumn(reportInterface) {
+    if (reportInterface.pageText && document.body.textContent.includes(reportInterface.pageText)) {
+      return true;
+    }
+
+    const hasQueryTextCell = Boolean(document.querySelector(reportInterface.queryTextSelector));
+
+    if (!reportInterface.headerSelector) {
+      return hasQueryTextCell;
+    }
+
+    const headerElements = Array.from(document.querySelectorAll(reportInterface.headerSelector));
+    const hasHeader = reportInterface.headerText
+      ? headerElements.some(el => extractTextFromQueryCell(el).includes(reportInterface.headerText))
+      : headerElements.length > 0;
+
+    return hasHeader || hasQueryTextCell;
+  }
+
+  function checkPage() {
+    const reportInterface = getActiveReportInterface();
+    activeReportInterface = reportInterface;
+
+    if (reportInterface) {
       if (loadPanelCollapsed()) {
         restoreCollapsedPanelState();
         return;
       }
       showPanel();
     } else {
+      activeReportInterface = null;
       hidePanel();
     }
   }
@@ -1344,10 +1389,17 @@
     // Не обрабатываем, если панель не активна на странице отчета
     if (!panelVisible && !panelCollapsed) return;
 
-    // Ищем текстовые элементы в колонке "Поисковый запрос" Яндекс.Директ.
-    const queryCells = document.querySelectorAll(QUERY_TEXT_SELECTOR);
+    const reportInterface = activeReportInterface || getActiveReportInterface();
+    if (!reportInterface) return;
+    activeReportInterface = reportInterface;
 
-    queryCells.forEach(queryTextEl => {
+    // Ищем текстовые элементы в колонке "Поисковый запрос" Яндекс.Директ.
+    const queryCells = document.querySelectorAll(reportInterface.queryTextSelector);
+
+    queryCells.forEach(queryCellEl => {
+      const queryTextEl = getQueryTextElement(queryCellEl, reportInterface);
+      if (!queryTextEl) return;
+
       const rawText = extractTextFromQueryCell(queryTextEl);
       if (queryTextEl.dataset.ydirectWordHandler === rawText) return;
 
@@ -1360,6 +1412,7 @@
       // Очищаем текстовый span и вставляем кликабельные слова
       queryTextEl.innerHTML = '';
       queryTextEl.classList.add('ydirect-query-text');
+      preventLegacyCheckboxFromQueryText(queryTextEl, reportInterface);
 
       words.forEach((w, i) => {
         if (!w.trim()) return;
@@ -1483,10 +1536,55 @@
         e.preventDefault();
       }, true);
 
+      document.addEventListener('click', (e) => {
+        if (!shouldBlockQueryTextClick(e.target)) return;
+
+        e.stopPropagation();
+        e.preventDefault();
+      }, true);
+
       document.addEventListener('contextmenu', () => {
         document.documentElement.classList.remove('ydirect-ignore-word-hover');
       }, true);
     }
+  }
+
+  function shouldBlockQueryTextClick(target) {
+    const queryTextEl = target.closest('.ydirect-query-text[data-ydirect-prevent-checkbox="true"]');
+    if (!queryTextEl) return Boolean(target.closest('.ydirect-clickable-word'));
+    return !isInsideRealCheckbox(target, queryTextEl);
+  }
+
+  function preventLegacyCheckboxFromQueryText(queryTextEl, reportInterface) {
+    if (!reportInterface.checkboxSelector || queryTextEl.dataset.ydirectPreventCheckbox !== undefined) return;
+
+    queryTextEl.dataset.ydirectPreventCheckbox = 'true';
+
+    const preventCheckboxToggle = (e) => {
+      if (isInsideRealCheckbox(e.target, queryTextEl)) return;
+
+      e.stopPropagation();
+      e.preventDefault();
+    };
+
+    ['click', 'dblclick'].forEach(eventName => {
+      queryTextEl.addEventListener(eventName, preventCheckboxToggle, true);
+    });
+  }
+
+  function isInsideRealCheckbox(target, scopeEl) {
+    const reportInterface = activeReportInterface || getActiveReportInterface();
+    if (!reportInterface || !reportInterface.checkboxSelector) return false;
+
+    const checkboxEl = target.closest(reportInterface.checkboxSelector);
+    return Boolean(checkboxEl && (!scopeEl || scopeEl.contains(checkboxEl)));
+  }
+
+  function getQueryTextElement(queryCellEl, reportInterface) {
+    if (reportInterface.queryTextInnerSelector) {
+      return queryCellEl.querySelector(reportInterface.queryTextInnerSelector) || queryCellEl;
+    }
+    return queryCellEl;
   }
 
   /**
